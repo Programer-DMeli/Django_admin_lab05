@@ -1,0 +1,59 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Catálogo de películas{% endblock %}
+
+{% block content %}
+  <h1>Catálogo de películas</h1>
+  <p class="lead">Vista pública de solo lectura. No requiere inicio de sesión.</p>
+
+  <form class="filters" method="get">
+    <input type="search" name="q" value="{{ search }}" placeholder="Buscar por título o sinopsis...">
+    <select name="genre">
+      <option value="">Todos los géneros</option>
+      {% for genre in genres %}
+        <option value="{{ genre.pk }}" {% if selected_genre.pk == genre.pk %}selected{% endif %}>
+          {{ genre.name }} ({{ genre.movie_count }})
+        </option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrar</button>
+    {% if search or selected_genre %}
+      <a class="tag" href="{% url 'movies:movie_list' %}">Limpiar filtros</a>
+    {% endif %}
+  </form>
+
+  {% if movies %}
+    <div class="grid">
+      {% for movie in movies %}
+        <article class="card">
+          <a href="{% url 'movies:movie_detail' movie.pk %}">
+            <div class="poster">
+              {% if movie.poster %}
+                <img src="{{ movie.poster.url }}" alt="Póster de {{ movie.title }}">
+              {% else %}{% endif %}
+            </div>
+          </a>
+          <div class="body">
+            <h3><a href="{% url 'movies:movie_detail' movie.pk %}">{{ movie.title }}</a></h3>
+            <div class="meta">
+              {{ movie.release_year }} ·
+              {% if movie.average_rating %}
+                <span class="score">{{ movie.average_rating|floatformat:2 }} ★</span>
+                ({{ movie.rating_count }})
+              {% else %}Sin valorar{% endif %}
+            </div>
+            <div style="margin-top:8px">
+              {% for genre in movie.genres.all %}
+                <a class="badge" href="{% url 'movies:movie_list' %}?genre={{ genre.pk }}">
+                  {{ genre.name }}
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty">No hay películas que coincidan con el filtro.</p>
+  {% endif %}
+{% endblock %}

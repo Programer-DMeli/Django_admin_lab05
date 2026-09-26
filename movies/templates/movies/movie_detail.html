@@ -1,0 +1,94 @@
+{% extends "movies/base.html" %}
+
+{% block title %}{{ movie.title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ movie.title }}</h1>
+  <p class="lead">
+    {{ movie.release_year }}
+    {% if movie.average_rating %}
+      · <span class="score">{{ movie.average_rating|floatformat:2 }} / 5</span>
+      ({{ movie.rating_count }} valoración{{ movie.rating_count|pluralize:"es" }})
+    {% else %}· Sin valorar{% endif %}
+  </p>
+
+  <div style="display:grid; grid-template-columns:220px 1fr; gap:28px; align-items:start">
+    <div>
+      <div class="card">
+        <div class="poster">
+          {% if movie.poster %}
+            <img src="{{ movie.poster.url }}" alt="Póster de {{ movie.title }}">
+          {% endif %}
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        {% for genre in movie.genres.all %}
+          <a class="badge" href="{% url 'movies:recommendations' %}?genre={{ genre.pk }}">
+            {{ genre.name }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <section class="block">
+        <h2>Sinopsis</h2>
+        <p>{{ movie.synopsis|default:"Sin sinopsis disponible." }}</p>
+      </section>
+
+      {% if movie.people.exists %}
+        <section class="block">
+          <h2>Reparto y equipo</h2>
+          <div>
+            {% for person in movie.people.all %}
+              <span class="badge">{{ person }} — {{ person.get_role_display }}</span>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="block">
+        <h2>Valoraciones públicas</h2>
+        {% if ratings %}
+          <table>
+            <thead>
+              <tr><th style="width:90px">Puntos</th><th>Comentario</th><th style="width:150px">Fecha</th></tr>
+            </thead>
+            <tbody>
+              {% for rating in ratings %}
+                <tr>
+                  <td class="score">{{ rating.score }} / 5</td>
+                  <td>{{ rating.comment|default:"Sin comentario." }}</td>
+                  <td class="meta">{{ rating.created_at|date:"d/m/Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="empty">Esta película aún no tiene valoraciones.</p>
+        {% endif %}
+      </section>
+
+      {% if related_movies %}
+        <section class="block">
+          <h2>Del mismo género</h2>
+          <div class="grid">
+            {% for related in related_movies %}
+              <article class="card">
+                <div class="body">
+                  <h3><a href="{% url 'movies:movie_detail' related.pk %}">{{ related.title }}</a></h3>
+                  <div class="meta">
+                    {{ related.release_year }}
+                    {% if related.average_rating %}
+                      · <span class="score">{{ related.average_rating|floatformat:2 }} ★</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Recomendaciones{% endblock %}
+
+{% block content %}
+  <h1>Recomendaciones por género</h1>
+  <p class="lead">
+    Lógica de negocio pública: se calcula la media de las valoraciones con
+    <code>Avg("ratings__score")</code> y se elige la mejor película de cada género.
+  </p>
+
+  <div class="note">
+    Esta vista es de consulta pública y no aplica los permisos del panel de
+    administración. Un usuario del grupo «Editores» puede verla igual que
+    cualquier visitante, aunque en el admin no pueda borrar películas.
+  </div>
+
+  <form class="filters" method="get">
+    <select name="genre">
+      <option value="">Todos los géneros</option>
+      {% for genre in genres %}
+        <option value="{{ genre.pk }}" {% if selected_genre.pk == genre.pk %}selected{% endif %}>
+          {{ genre.name }} ({{ genre.movie_count }} película{{ genre.movie_count|pluralize:"s" }})
+        </option>
+      {% endfor %}
+    </select>
+    <button type="submit">Ver ranking</button>
+    {% if selected_genre %}
+      <a class="tag" href="{% url 'movies:recommendations' %}">Quitar filtro</a>
+    {% endif %}
+  </form>
+
+  {% if best_per_genre %}
+    <section class="block">
+      <h2>Mejor valorada{% if selected_genre %} de {{ selected_genre.name }}{% endif %}</h2>
+      <div class="grid">
+        {% for genre, movie in best_per_genre %}
+          <article class="card">
+            <a href="{% url 'movies:movie_detail' movie.pk %}">
+              <div class="poster">
+                {% if movie.poster %}
+                  <img src="{{ movie.poster.url }}" alt="Póster de {{ movie.title }}">
+                {% endif %}
+              </div>
+            </a>
+            <div class="body">
+              <div class="meta">{{ genre.name }}</div>
+              <h3><a href="{% url 'movies:movie_detail' movie.pk %}">{{ movie.title }}</a></h3>
+              <div class="meta">
+                {{ movie.release_year }} ·
+                <span class="score">{{ movie.average_rating|floatformat:2 }} ★</span>
+                ({{ movie.rating_count }})
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="block">
+    <h2>Ranking completo{% if selected_genre %} — {{ selected_genre.name }}{% endif %}</h2>
+    {% if ranked_movies %}
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Película</th>
+            <th style="width:90px">Año</th>
+            <th>Géneros</th>
+            <th style="width:110px">Media</th>
+            <th style="width:80px">Votos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for movie in ranked_movies %}
+            <tr>
+              <td class="meta">{{ forloop.counter }}</td>
+              <td><a href="{% url 'movies:movie_detail' movie.pk %}">{{ movie.title }}</a></td>
+              <td class="meta">{{ movie.release_year }}</td>
+              <td>
+                {% for genre in movie.genres.all %}
+                  <span class="badge">{{ genre.name }}</span>
+                {% endfor %}
+              </td>
+              <td class="score">{{ movie.average_rating|floatformat:2 }} / 5</td>
+              <td class="meta">{{ movie.rating_count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">No hay películas valoradas para este filtro.</p>
+    {% endif %}
+  </section>
+{% endblock %}
